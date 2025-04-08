@@ -1,6 +1,6 @@
 import { Text, View } from 'react-native';
 import { useEffect, useState } from 'react';
-import { fetchPuzzle } from '../lib/fetchPuzzle'; // Adjust this if needed
+import { fetchPuzzle } from '../lib/getPuzzle'; // Adjust this if needed
 
 export default function Layout() {
   const [puzzle, setPuzzle] = useState<any>(null);
