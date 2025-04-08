@@ -8,7 +8,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { getPuzzle } from './lib/getPuzzle';
+import { getPuzzle } from 'app/lib/fetchPuzzle';
 
 export default function PuzzleScreen() {
   const [puzzle, setPuzzle] = useState<any | null>(null);
