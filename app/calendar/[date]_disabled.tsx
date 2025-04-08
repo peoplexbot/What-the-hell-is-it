@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { View, Text, TextInput, Image, TouchableOpacity, ActivityIndicator } from 'react-native';
-import { fetchPuzzle } from '../lib/fetchPuzzle';
 
 export default function CalendarDayScreen() {
   const { date } = useLocalSearchParams();
