@@ -1,6 +1,15 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, TextInput, FlatList, TouchableOpacity, Button, KeyboardAvoidingView } from 'react-native';
+import {
+  View,
+  Text,
+  TextInput,
+  FlatList,
+  TouchableOpacity,
+  Button,
+  KeyboardAvoidingView,
+} from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useRouter } from 'expo-router';
 
 type Entry = {
   name: string;
@@ -9,6 +18,7 @@ type Entry = {
 };
 
 export default function LeaderboardScreen() {
+  const router = useRouter();
   const [entries, setEntries] = useState<Entry[]>([]);
   const [name, setName] = useState('');
   const [pendingStreak, setPendingStreak] = useState<number | null>(null);
@@ -92,7 +102,15 @@ export default function LeaderboardScreen() {
       >
         <Text className="text-center text-gray-700 text-sm">Clear Leaderboard</Text>
       </TouchableOpacity>
+
+      <TouchableOpacity
+        className="mt-4 bg-green-600 px-4 py-2 rounded"
+        onPress={() => router.push('/puzzle')}
+      >
+        <Text className="text-white text-center text-lg">Play Again</Text>
+      </TouchableOpacity>
     </KeyboardAvoidingView>
   );
 }
+
 
