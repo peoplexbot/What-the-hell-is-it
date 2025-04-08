@@ -7,6 +7,7 @@ export async function fetchPuzzle(category?: string, difficulty?: string) {
   if (category && category !== 'Surprise Me!') {
     params.append('category', category);
   }
+
   if (difficulty) {
     params.append('difficulty', difficulty);
   }
@@ -16,7 +17,10 @@ export async function fetchPuzzle(category?: string, difficulty?: string) {
   }
 
   const res = await fetch(url);
+  if (!res.ok) {
+    throw new Error(`Failed to fetch puzzle: ${res.statusText}`);
+  }
+
   const data = await res.json();
   return data;
 }
-
