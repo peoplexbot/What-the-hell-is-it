@@ -24,3 +24,4 @@ export async function fetchPuzzle(category?: string, difficulty?: string) {
   const data = await res.json();
   return data;
 }
+
