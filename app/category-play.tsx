@@ -9,7 +9,7 @@ import {
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { fetchPuzzle } from '@/app/lib/fetchPuzzle';
+import { fetchPuzzle } from './lib/fetchPuzzle';
 
 
 export default function CategoryPuzzleScreen() {
