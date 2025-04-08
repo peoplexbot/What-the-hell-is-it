@@ -9,8 +9,7 @@ import {
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { fetchPuzzle } from '../lib/getPuzzle';
-
+import { fetchPuzzle } from 'app/lib/getPuzzle'; // Using absolute path
 
 export default function CategoryPuzzleScreen() {
   const { category } = useLocalSearchParams();
@@ -57,7 +56,7 @@ export default function CategoryPuzzleScreen() {
   };
 
   const normalize = (text: string) =>
-    text.trim().toLowerCase().replace(/[^\w\s]/gi, '');
+    text.trim().toLowerCase().replace(/[^\\w\\s]/gi, '');
 
   const checkAnswer = () => {
     if (!puzzle) return;
@@ -66,7 +65,7 @@ export default function CategoryPuzzleScreen() {
 
     if (accepted.includes(cleanedGuess)) {
       setStatus('won');
-      setStreak(prev => {
+      setStreak((prev) => {
         const newStreak = prev + 1;
         if (!hintUsed && guessesLeft === 3) setPerfectSolve(true);
         return newStreak;
@@ -102,9 +101,11 @@ export default function CategoryPuzzleScreen() {
 
   return (
     <View className="flex-1 p-4 items-center bg-white">
-      <Text className="text-xl font-bold mb-2">🌀 Category: {category}</Text>
+      <Text className="text-xl font-bold mb-2">
+        🌈 Category: {category}
+      </Text>
       <Text className="text-md text-gray-600 mb-2">
-        🔢 Streak: {streak}  | 🏆 Best: {bestStreak}
+        🏆 Streak: {streak}  | 🏅 Best: {bestStreak}
       </Text>
 
       <Image
