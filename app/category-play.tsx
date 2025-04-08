@@ -9,7 +9,7 @@ import {
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { fetchPuzzle } from 'app/lib/fetchPuzzle'; // Using absolute path
+import { fetchPuzzle } from '../lib/fetchPuzzle'; // Correct relative path
 
 export default function CategoryPuzzleScreen() {
   const { category } = useLocalSearchParams();
@@ -101,12 +101,8 @@ export default function CategoryPuzzleScreen() {
 
   return (
     <View className="flex-1 p-4 items-center bg-white">
-      <Text className="text-xl font-bold mb-2">
-        🌈 Category: {category}
-      </Text>
-      <Text className="text-md text-gray-600 mb-2">
-        🏆 Streak: {streak}  | 🏅 Best: {bestStreak}
-      </Text>
+      <Text className="text-xl font-bold mb-2">🌈 Category: {category}</Text>
+      <Text className="text-md text-gray-600 mb-2">🏆 Streak: {streak}  | 🏅 Best: {bestStreak}</Text>
 
       <Image
         source={{ uri: puzzle['Zoomed Image URL'] }}
@@ -123,9 +119,7 @@ export default function CategoryPuzzleScreen() {
         {[...Array(3)].map((_, i) => (
           <View
             key={i}
-            className={`w-3 h-3 rounded-full ${
-              i < guessesLeft ? 'bg-green-500' : 'bg-gray-300'
-            }`}
+            className={`w-3 h-3 rounded-full ${i < guessesLeft ? 'bg-green-500' : 'bg-gray-300'}`}
           />
         ))}
       </View>
@@ -208,5 +202,11 @@ export default function CategoryPuzzleScreen() {
               className="bg-gray-600 px-4 py-2 rounded-xl"
               onPress={() => router.replace('/endless')}
             >
-              <Text className="text-white text-lg">*
-
+              <Text className="text-white text-lg">Back to Categories</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      )}
+    </View>
+  );
+}
