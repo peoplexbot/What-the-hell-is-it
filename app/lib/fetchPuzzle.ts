@@ -1,4 +1,4 @@
-import { API_URL } from '../constants/api';
+import { API_URL } from '../../constants/api';
 
 export async function fetchPuzzle(category?: string, difficulty?: string) {
   let url = API_URL;
