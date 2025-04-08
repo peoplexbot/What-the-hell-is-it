@@ -8,6 +8,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { fetchPuzzle } from '../lib/fetchPuzzle';
 
 export default function CategoryPuzzleScreen() {
@@ -19,18 +20,37 @@ export default function CategoryPuzzleScreen() {
   const [guessesLeft, setGuessesLeft] = useState(3);
   const [hintUsed, setHintUsed] = useState(false);
   const [status, setStatus] = useState<'playing' | 'won' | 'lost'>('playing');
+  const [streak, setStreak] = useState(0);
+  const [bestStreak, setBestStreak] = useState(0);
+  const [perfectSolve, setPerfectSolve] = useState(false);
 
   useEffect(() => {
     if (category) {
+      loadBestStreak();
       loadPuzzle(category as string);
     }
   }, [category]);
+
+  const loadBestStreak = async () => {
+    const stored = await AsyncStorage.getItem('endlessHighScore');
+    if (stored) setBestStreak(parseInt(stored));
+  };
+
+  const saveBestStreak = async (newStreak: number) => {
+    const stored = await AsyncStorage.getItem('endlessHighScore');
+    const prev = parseInt(stored || '0');
+    if (newStreak > prev) {
+      await AsyncStorage.setItem('endlessHighScore', String(newStreak));
+      setBestStreak(newStreak);
+    }
+  };
 
   const loadPuzzle = async (cat: string) => {
     setStatus('playing');
     setGuessesLeft(3);
     setHintUsed(false);
     setGuess('');
+    setPerfectSolve(false);
     const newPuzzle = await fetchPuzzle(cat);
     setPuzzle(newPuzzle);
   };
@@ -45,11 +65,17 @@ export default function CategoryPuzzleScreen() {
 
     if (accepted.includes(cleanedGuess)) {
       setStatus('won');
+      setStreak(prev => {
+        const newStreak = prev + 1;
+        if (!hintUsed && guessesLeft === 3) setPerfectSolve(true);
+        return newStreak;
+      });
     } else {
       const newGuesses = guessesLeft - 1;
       setGuessesLeft(newGuesses);
       if (newGuesses <= 0) {
         setStatus('lost');
+        saveBestStreak(streak); // Save best if streak ends
       }
     }
     setGuess('');
@@ -76,6 +102,9 @@ export default function CategoryPuzzleScreen() {
   return (
     <View className="flex-1 p-4 items-center bg-white">
       <Text className="text-xl font-bold mb-2">🌀 Category: {category}</Text>
+      <Text className="text-md text-gray-600 mb-2">
+        🔢 Streak: {streak}  | 🏆 Best: {bestStreak}
+      </Text>
 
       <Image
         source={{ uri: puzzle['Zoomed Image URL'] }}
@@ -139,7 +168,11 @@ export default function CategoryPuzzleScreen() {
       {status !== 'playing' && (
         <View className="mt-6 items-center">
           <Text className="text-2xl font-bold mb-2 text-center">
-            {status === 'won' ? '🎉 You got it!' : `❌ Nope! It was ${puzzle.Answer}`}
+            {status === 'won'
+              ? perfectSolve
+                ? '🎯 Perfect Solve!'
+                : '🎉 You got it!'
+              : `❌ Nope! It was ${puzzle.Answer}`}
           </Text>
           <Image
             source={{ uri: puzzle['Full Image URL'] }}
@@ -150,12 +183,24 @@ export default function CategoryPuzzleScreen() {
           </Text>
 
           <View className="flex-row space-x-4 mt-4">
-            <TouchableOpacity
-              className="bg-green-600 px-4 py-2 rounded-xl"
-              onPress={() => loadPuzzle(category as string)}
-            >
-              <Text className="text-white text-lg">Play Another</Text>
-            </TouchableOpacity>
+            {status === 'won' ? (
+              <TouchableOpacity
+                className="bg-green-600 px-4 py-2 rounded-xl"
+                onPress={() => loadPuzzle(category as string)}
+              >
+                <Text className="text-white text-lg">Next Puzzle</Text>
+              </TouchableOpacity>
+            ) : (
+              <TouchableOpacity
+                className="bg-blue-600 px-4 py-2 rounded-xl"
+                onPress={() => {
+                  setStreak(0);
+                  loadPuzzle(category as string);
+                }}
+              >
+                <Text className="text-white text-lg">Play Again</Text>
+              </TouchableOpacity>
+            )}
 
             <TouchableOpacity
               className="bg-gray-600 px-4 py-2 rounded-xl"
@@ -169,4 +214,3 @@ export default function CategoryPuzzleScreen() {
     </View>
   );
 }
-
