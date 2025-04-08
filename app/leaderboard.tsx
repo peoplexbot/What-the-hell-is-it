@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, FlatList, TextInput, Button, TouchableOpacity } from 'react-native';
+import { View, Text, TextInput, FlatList, TouchableOpacity, Button, KeyboardAvoidingView } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 type Entry = {
@@ -11,30 +11,45 @@ type Entry = {
 export default function LeaderboardScreen() {
   const [entries, setEntries] = useState<Entry[]>([]);
   const [name, setName] = useState('');
-  const [streak, setStreak] = useState<number | null>(null);
-  const [showEntry, setShowEntry] = useState(false);
+  const [pendingStreak, setPendingStreak] = useState<number | null>(null);
 
   useEffect(() => {
-    loadEntries();
+    loadLeaderboard();
+    checkPendingStreak();
   }, []);
 
-  const loadEntries = async () => {
-    const stored = await AsyncStorage.getItem('leaderboard');
+  const checkPendingStreak = async () => {
+    const stored = await AsyncStorage.getItem('pendingStreak');
     if (stored) {
-      setEntries(JSON.parse(stored));
+      setPendingStreak(Number(stored));
+    }
+  };
+
+  const loadLeaderboard = async () => {
+    const raw = await AsyncStorage.getItem('leaderboard');
+    if (raw) {
+      setEntries(JSON.parse(raw));
     }
   };
 
   const saveEntry = async () => {
-    if (!name || streak === null) return;
+    if (!name || pendingStreak === null) return;
 
-    const newEntry = { name, streak, date: new Date().toISOString().split('T')[0] };
-    const updated = [...entries, newEntry].sort((a, b) => b.streak - a.streak).slice(0, 10); // top 10
-    setEntries(updated);
+    const newEntry: Entry = {
+      name,
+      streak: pendingStreak,
+      date: new Date().toISOString().split('T')[0],
+    };
+
+    const updated = [...entries, newEntry]
+      .sort((a, b) => b.streak - a.streak)
+      .slice(0, 10); // Top 10 only
+
     await AsyncStorage.setItem('leaderboard', JSON.stringify(updated));
+    await AsyncStorage.removeItem('pendingStreak');
+    setEntries(updated);
+    setPendingStreak(null);
     setName('');
-    setStreak(null);
-    setShowEntry(false);
   };
 
   const clearLeaderboard = async () => {
@@ -43,27 +58,28 @@ export default function LeaderboardScreen() {
   };
 
   return (
-    <View className="flex-1 p-4">
-      <Text className="text-2xl font-bold mb-4 text-center">🏆 Leaderboard</Text>
+    <KeyboardAvoidingView className="flex-1 p-4 bg-white" behavior="padding">
+      <Text className="text-2xl font-bold text-center mb-4">🏆 Leaderboard</Text>
 
-      {showEntry && (
-        <View className="mb-4">
-          <Text className="mb-1">Enter your name for a streak of {streak}:</Text>
+      {pendingStreak !== null && (
+        <View className="mb-6">
+          <Text className="text-lg mb-2">You got a streak of {pendingStreak}!</Text>
           <TextInput
-            className="border px-2 py-1 rounded mb-2"
+            className="border px-3 py-2 rounded mb-2"
+            placeholder="Enter your name"
             value={name}
             onChangeText={setName}
-            placeholder="Your name"
           />
-          <Button title="Save Score" onPress={saveEntry} />
+          <Button title="Save My Score" onPress={saveEntry} />
         </View>
       )}
 
       <FlatList
         data={entries}
         keyExtractor={(item, index) => `${item.name}-${index}`}
+        ListEmptyComponent={<Text className="text-center text-gray-500">No scores yet.</Text>}
         renderItem={({ item, index }) => (
-          <View className="flex-row justify-between border-b py-2">
+          <View className="flex-row justify-between py-2 border-b">
             <Text>{index + 1}. {item.name}</Text>
             <Text>{item.streak}</Text>
           </View>
@@ -71,12 +87,12 @@ export default function LeaderboardScreen() {
       />
 
       <TouchableOpacity
-        className="bg-gray-300 rounded-lg px-4 py-2 mt-6"
+        className="mt-8 bg-gray-200 px-4 py-2 rounded"
         onPress={clearLeaderboard}
       >
-        <Text className="text-center text-sm">Clear Leaderboard</Text>
+        <Text className="text-center text-gray-700 text-sm">Clear Leaderboard</Text>
       </TouchableOpacity>
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 
