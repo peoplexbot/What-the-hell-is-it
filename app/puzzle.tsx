@@ -8,7 +8,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { fetchPuzzle } from './lib/fetchPuzzle';
+import { getPuzzle } from './lib/getPuzzle';
 
 export default function PuzzleScreen() {
   const [puzzle, setPuzzle] = useState<any | null>(null);
@@ -34,7 +34,7 @@ export default function PuzzleScreen() {
     setGuessesLeft(3);
     setHintUsed(false);
     setGuess('');
-    const newPuzzle = await fetchPuzzle();
+    const newPuzzle = await getPuzzle();
     setPuzzle(newPuzzle);
   };
 
