@@ -9,7 +9,7 @@ import {
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { fetchPuzzle } from 'app/lib/getPuzzle'; // Using absolute path
+import { fetchPuzzle } from 'app/lib/fetchPuzzle'; // Using absolute path
 
 export default function CategoryPuzzleScreen() {
   const { category } = useLocalSearchParams();
@@ -208,11 +208,5 @@ export default function CategoryPuzzleScreen() {
               className="bg-gray-600 px-4 py-2 rounded-xl"
               onPress={() => router.replace('/endless')}
             >
-              <Text className="text-white text-lg">Back to Categories</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      )}
-    </View>
-  );
-}
+              <Text className="text-white text-lg">*
+
