@@ -1,301 +1,174 @@
-import React, { useRef, useState, useEffect } from 'react';
-import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  StyleSheet,
-  Dimensions,
-  Animated,
-  ActivityIndicator,
-  Image,
-  ScrollView,
-  SafeAreaView,
-} from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import React, { useEffect, useState } from 'react';
+import { View, Text, TextInput, Image, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
+import { fetchPuzzle } from '../lib/fetchPuzzle';
 
-const imageSize = Dimensions.get('window').width * 0.9;
-const MAX_ATTEMPTS = 3;
-
-const PuzzleScreen = () => {
-  const params = useLocalSearchParams();
-  const router = useRouter();
-  const [puzzle, setPuzzle] = useState<any>(null);
+export default function PuzzleScreen() {
+  const [puzzle, setPuzzle] = useState<any | null>(null);
   const [guess, setGuess] = useState('');
-  const [streak, setStreak] = useState(0);
-  const [gameOver, setGameOver] = useState(false);
-  const [guessesLeft, setGuessesLeft] = useState(MAX_ATTEMPTS);
+  const [guessesLeft, setGuessesLeft] = useState(3);
   const [hintUsed, setHintUsed] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [username, setUsername] = useState('');
-  const [error, setError] = useState('');
-  const [feedback, setFeedback] = useState('');
-  const scaleAnim = useRef(new Animated.Value(5)).current; // even more zoomed in!
+  const [status, setStatus] = useState<'playing' | 'won' | 'lost'>('playing');
 
   useEffect(() => {
-    loadUsername();
-    if (params && params.answer) {
-      const incomingPuzzle = {
-        answer: params.answer,
-        acceptable_answers: JSON.parse(params.acceptable_answers as string),
-        imageUrl: params.imageUrl,
-        fullImageUrl: params.fullImageUrl || params.imageUrl,
-        clue: params.hint,
-        category: params.category,
-        photographer: params.photographer,
-        photographerUrl: params.photographerUrl,
-      };
-      setPuzzle(incomingPuzzle);
-      setLoading(false);
-      setGameOver(false);
-      setGuess('');
-      setGuessesLeft(MAX_ATTEMPTS);
-      setHintUsed(false);
-      setFeedback('');
-      scaleAnim.setValue(5);
-    } else {
-      setError('Puzzle not found.');
-    }
-  }, [params]);
+    loadPuzzle();
+  }, []);
 
-  const loadUsername = async () => {
-    const stored = await AsyncStorage.getItem('username');
-    if (stored) setUsername(stored);
+  const loadPuzzle = async () => {
+    setStatus('playing');
+    setGuessesLeft(3);
+    setHintUsed(false);
+    setGuess('');
+    const newPuzzle = await fetchPuzzle();
+    setPuzzle(newPuzzle);
   };
 
-  const handleSubmit = () => {
-    const normalized = guess.trim().toLowerCase();
-    const accepted = [puzzle?.answer?.toLowerCase(), ...(puzzle?.acceptable_answers || [])];
+  const normalize = (text: string) =>
+    text.trim().toLowerCase().replace(/[^\w\s]/gi, '');
 
-    if (accepted.includes(normalized)) {
-      setFeedback('🎉 You got it!');
-      setGameOver(true);
-      setStreak((prev) => prev + 1);
-      Animated.spring(scaleAnim, {
-        toValue: 1,
-        useNativeDriver: true,
-      }).start();
+  const checkAnswer = () => {
+    if (!puzzle) return;
+    const cleanedGuess = normalize(guess);
+    const accepted = [puzzle.Answer, ...(puzzle.AcceptableAnswers || [])].map(normalize);
+
+    if (accepted.includes(cleanedGuess)) {
+      setStatus('won');
     } else {
       const newGuesses = guessesLeft - 1;
       setGuessesLeft(newGuesses);
       if (newGuesses <= 0) {
-        setFeedback(`❌ It was a ${puzzle.answer}`);
-        setGameOver(true);
-        setStreak(0); // reset streak on fail
-        Animated.spring(scaleAnim, {
-          toValue: 1,
-          useNativeDriver: true,
-        }).start();
-      } else {
-        const zoom = Math.max(1, 5 - newGuesses * (4 / MAX_ATTEMPTS));
-        Animated.spring(scaleAnim, {
-          toValue: zoom,
-          useNativeDriver: true,
-        }).start();
-        setFeedback('❌ Try again...');
+        setStatus('lost');
       }
     }
     setGuess('');
   };
 
-  const handleHint = () => {
+  const useHint = () => {
     if (!hintUsed && guessesLeft > 1) {
       setHintUsed(true);
-      setGuessesLeft((g) => g - 1);
+      setGuessesLeft(guessesLeft - 1);
     }
   };
 
-  const handleNextPuzzle = async () => {
-    try {
-      if (!puzzle?.category) return;
-
-      const url = new URL('https://script.google.com/macros/s/AKfycbwhDxXzrdYbWKtue59ATIqIs7-jWXU5_Z-6VaSo_d3eCCEiZ_52Nmg3QCmYPc46tpFu1g/exec');
-      url.searchParams.append('category', puzzle.category);
-      url.searchParams.append('difficulty', 'easy');
-
-      const response = await fetch(url.toString());
-      const puzzleData = await response.json();
-
-      if (!puzzleData?.Answer) throw new Error('No puzzle data received');
-
-      router.replace({
-        pathname: '/puzzle',
-        params: {
-          answer: puzzleData.Answer,
-          imageUrl: puzzleData['Image URL'],
-          fullImageUrl: puzzleData['Zoomed Image URL'] || puzzleData['Image URL'],
-          acceptable_answers: JSON.stringify(
-            puzzleData['Acceptable Answers']?.split(',').map((s) => s.trim()) || []
-          ),
-          hint: puzzleData.Clue,
-          category: puzzleData.Category,
-          photographer: puzzleData['Photographer Name'],
-          photographerUrl: puzzleData['Photo Source'],
-          isDaily: 'false',
-        },
-      });
-    } catch (error) {
-      console.error('Failed to load next puzzle:', error);
-      router.replace('/endless');
-    }
-  };
-
-  if (loading) {
+  const renderDots = () => {
     return (
-      <SafeAreaView style={styles.centered}>
+      <View className="flex-row space-x-2 justify-center my-2">
+        {[...Array(3)].map((_, i) => (
+          <View
+            key={i}
+            className={`w-3 h-3 rounded-full ${
+              i < guessesLeft ? 'bg-green-500' : 'bg-gray-300'
+            }`}
+          />
+        ))}
+      </View>
+    );
+  };
+
+  if (!puzzle) {
+    return (
+      <View className="flex-1 justify-center items-center">
         <ActivityIndicator size="large" />
-      </SafeAreaView>
+        <Text className="mt-4 text-gray-500">Loading puzzle...</Text>
+      </View>
     );
   }
 
-  if (error) {
-    return (
-      <SafeAreaView style={styles.centered}>
-        <Text style={styles.errorText}>{error}</Text>
-        <TouchableOpacity style={styles.button} onPress={() => router.replace('/')}> 
-          <Text style={styles.buttonText}>Go Back</Text>
-        </TouchableOpacity>
-      </SafeAreaView>
-    );
-  }
+  const imageZoomLevel = 1 + (3 - guessesLeft) * 0.3; // simple zoom factor
 
   return (
-    <SafeAreaView style={styles.container}>
-      <ScrollView contentContainerStyle={{ paddingBottom: 40 }}>
-        <Text style={styles.streak}>🔥 Streak: {streak}</Text>
-        <Text style={styles.clue}>Clue: {puzzle.clue}</Text>
+    <View className="flex-1 p-4 items-center bg-white">
+      <Text className="text-2xl font-bold mb-4">What The Hell Is It?</Text>
 
-        <View style={styles.imageWrapper}>
-          <Animated.Image
-            source={{ uri: gameOver ? puzzle.fullImageUrl : puzzle.imageUrl }}
-            style={[styles.image, { transform: [{ scale: scaleAnim }] }]}
-            resizeMode="cover"
+      <Image
+        source={{ uri: puzzle['Zoomed Image URL'] }}
+        resizeMode="cover"
+        style={{
+          width: 300,
+          height: 300,
+          transform: [{ scale: imageZoomLevel }],
+          borderRadius: 16,
+        }}
+      />
+
+      {renderDots()}
+
+      {hintUsed && (
+        <Text className="text-center text-lg my-2 text-blue-700 italic">
+          Hint: {puzzle.Clue}
+        </Text>
+      )}
+
+      {status === 'playing' && (
+        <>
+          <TextInput
+            value={guess}
+            onChangeText={setGuess}
+            placeholder="Your guess..."
+            className="border w-full mt-4 p-2 rounded-lg text-center"
+            onSubmitEditing={checkAnswer}
+            returnKeyType="done"
           />
+
+          <View className="flex-row justify-between mt-3 space-x-4">
+            <TouchableOpacity
+              className="bg-blue-600 px-4 py-2 rounded-xl"
+              onPress={checkAnswer}
+            >
+              <Text className="text-white text-lg">Submit</Text>
+            </TouchableOpacity>
+
+            {!hintUsed && guessesLeft > 1 && (
+              <TouchableOpacity
+                className="bg-yellow-400 px-4 py-2 rounded-xl"
+                onPress={useHint}
+              >
+                <Text className="text-black text-lg">Use Hint (-1)</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+        </>
+      )}
+
+      {status === 'won' && (
+        <View className="mt-6 items-center">
+          <Text className="text-2xl font-bold text-green-600 mb-2">You got it!</Text>
+          <Image
+            source={{ uri: puzzle['Full Image URL'] }}
+            style={{ width: 300, height: 300, borderRadius: 16 }}
+          />
+          <Text className="mt-2 text-xs text-gray-500">
+            Photo by {puzzle.Photographer} ({puzzle.Source})
+          </Text>
+
+          <TouchableOpacity
+            className="bg-green-600 px-4 py-2 mt-4 rounded-xl"
+            onPress={loadPuzzle}
+          >
+            <Text className="text-white text-lg">Next Puzzle</Text>
+          </TouchableOpacity>
         </View>
+      )}
 
-        <View style={styles.dotsContainer}>
-          {Array.from({ length: MAX_ATTEMPTS }).map((_, i) => (
-            <View
-              key={i}
-              style={[
-                styles.dot,
-                { backgroundColor: i < guessesLeft ? 'green' : 'red' },
-              ]}
-            />
-          ))}
+      {status === 'lost' && (
+        <View className="mt-6 items-center">
+          <Text className="text-2xl font-bold text-red-600 mb-2">Nope! It was:</Text>
+          <Text className="text-xl italic mb-2">{puzzle.Answer}</Text>
+          <Image
+            source={{ uri: puzzle['Full Image URL'] }}
+            style={{ width: 300, height: 300, borderRadius: 16 }}
+          />
+          <Text className="mt-2 text-xs text-gray-500">
+            Photo by {puzzle.Photographer} ({puzzle.Source})
+          </Text>
+
+          <TouchableOpacity
+            className="bg-red-600 px-4 py-2 mt-4 rounded-xl"
+            onPress={loadPuzzle}
+          >
+            <Text className="text-white text-lg">Try Another</Text>
+          </TouchableOpacity>
         </View>
-
-        {feedback && <Text style={styles.feedback}>{feedback}</Text>}
-
-        {!hintUsed && !gameOver && guessesLeft > 1 && (
-          <TouchableOpacity onPress={handleHint}>
-            <Text style={styles.hintText}>💡 Use Hint (-1 guess)</Text>
-          </TouchableOpacity>
-        )}
-
-        <TextInput
-          placeholder="Your guess..."
-          style={styles.input}
-          value={guess}
-          onChangeText={setGuess}
-        />
-
-        {!gameOver ? (
-          <TouchableOpacity style={styles.button} onPress={handleSubmit}>
-            <Text style={styles.buttonText}>Submit Guess</Text>
-          </TouchableOpacity>
-        ) : (
-          <TouchableOpacity style={styles.button} onPress={handleNextPuzzle}>
-            <Text style={styles.buttonText}>Next Puzzle</Text>
-          </TouchableOpacity>
-        )}
-      </ScrollView>
-    </SafeAreaView>
+      )}
+    </View>
   );
-};
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f8fafc',
-    padding: 20,
-  },
-  centered: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  imageWrapper: {
-    width: '100%',
-    height: imageSize,
-    overflow: 'hidden',
-    borderRadius: 12,
-    backgroundColor: '#e2e8f0',
-    marginBottom: 20,
-  },
-  image: {
-    width: '100%',
-    height: '100%',
-  },
-  input: {
-    backgroundColor: 'white',
-    padding: 10,
-    borderRadius: 8,
-    borderColor: '#ccc',
-    borderWidth: 1,
-    marginBottom: 10,
-  },
-  button: {
-    backgroundColor: '#007AFF',
-    padding: 12,
-    borderRadius: 8,
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  buttonText: {
-    color: 'white',
-    fontWeight: 'bold',
-  },
-  streak: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 8,
-    color: '#0f172a',
-  },
-  clue: {
-    fontSize: 16,
-    marginBottom: 10,
-    color: '#475569',
-  },
-  dotsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    marginBottom: 10,
-  },
-  dot: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    marginHorizontal: 4,
-  },
-  feedback: {
-    fontSize: 16,
-    color: '#2563eb',
-    marginBottom: 12,
-    textAlign: 'center',
-  },
-  hintText: {
-    color: 'orange',
-    textAlign: 'center',
-    marginBottom: 10,
-  },
-  errorText: {
-    fontSize: 16,
-    color: 'red',
-    textAlign: 'center',
-    marginBottom: 12,
-  },
-});
-
-export default PuzzleScreen;
+}
