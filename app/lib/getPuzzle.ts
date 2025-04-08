@@ -1,6 +1,6 @@
 import { API_URL } from '../constants/api';
 
-export async function fetchPuzzle(category?: string, difficulty?: string) {
+export async function getPuzzle(category?: string, difficulty?: string) {
   let url = API_URL;
   const params = new URLSearchParams();
 
