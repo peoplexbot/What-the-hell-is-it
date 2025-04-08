@@ -1,5 +1,13 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, TextInput, Image, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
+import {
+  View,
+  Text,
+  TextInput,
+  Image,
+  TouchableOpacity,
+  ActivityIndicator,
+} from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { fetchPuzzle } from '../lib/fetchPuzzle';
 
 export default function PuzzleScreen() {
@@ -8,10 +16,18 @@ export default function PuzzleScreen() {
   const [guessesLeft, setGuessesLeft] = useState(3);
   const [hintUsed, setHintUsed] = useState(false);
   const [status, setStatus] = useState<'playing' | 'won' | 'lost'>('playing');
+  const [streak, setStreak] = useState(0);
 
   useEffect(() => {
     loadPuzzle();
   }, []);
+
+  useEffect(() => {
+    if (status === 'lost' && streak > 0) {
+      AsyncStorage.setItem('pendingStreak', String(streak));
+      setStreak(0); // reset streak after storing
+    }
+  }, [status]);
 
   const loadPuzzle = async () => {
     setStatus('playing');
@@ -28,10 +44,13 @@ export default function PuzzleScreen() {
   const checkAnswer = () => {
     if (!puzzle) return;
     const cleanedGuess = normalize(guess);
-    const accepted = [puzzle.Answer, ...(puzzle.AcceptableAnswers || [])].map(normalize);
+    const accepted = [puzzle.Answer, ...(puzzle.AcceptableAnswers || [])].map(
+      normalize
+    );
 
     if (accepted.includes(cleanedGuess)) {
       setStatus('won');
+      setStreak(prev => prev + 1);
     } else {
       const newGuesses = guessesLeft - 1;
       setGuessesLeft(newGuesses);
@@ -73,7 +92,7 @@ export default function PuzzleScreen() {
     );
   }
 
-  const imageZoomLevel = 1 + (3 - guessesLeft) * 0.3; // simple zoom factor
+  const imageZoomLevel = 1 + (3 - guessesLeft) * 0.3;
 
   return (
     <View className="flex-1 p-4 items-center bg-white">
@@ -131,7 +150,9 @@ export default function PuzzleScreen() {
 
       {status === 'won' && (
         <View className="mt-6 items-center">
-          <Text className="text-2xl font-bold text-green-600 mb-2">You got it!</Text>
+          <Text className="text-2xl font-bold text-green-600 mb-2">
+            You got it!
+          </Text>
           <Image
             source={{ uri: puzzle['Full Image URL'] }}
             style={{ width: 300, height: 300, borderRadius: 16 }}
@@ -151,7 +172,9 @@ export default function PuzzleScreen() {
 
       {status === 'lost' && (
         <View className="mt-6 items-center">
-          <Text className="text-2xl font-bold text-red-600 mb-2">Nope! It was:</Text>
+          <Text className="text-2xl font-bold text-red-600 mb-2">
+            Nope! It was:
+          </Text>
           <Text className="text-xl italic mb-2">{puzzle.Answer}</Text>
           <Image
             source={{ uri: puzzle['Full Image URL'] }}
