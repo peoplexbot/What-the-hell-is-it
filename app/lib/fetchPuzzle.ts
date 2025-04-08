@@ -1,8 +1,7 @@
-export async function fetchPuzzle(category?: string, difficulty?: string) {
-  const baseUrl =
-    'https://script.google.com/macros/s/AKfycbzOa9ETv1K3tozEtBuGfR_vND5uAWXuVcVMM1kb-ggH-iUhNeLcSaT97D910rxGqFi1sQ/exec';
+import { API_URL } from '../constants/api';
 
-  let url = baseUrl;
+export async function fetchPuzzle(category?: string, difficulty?: string) {
+  let url = API_URL;
   const params = new URLSearchParams();
 
   if (category && category !== 'Surprise Me!') {
@@ -20,3 +19,4 @@ export async function fetchPuzzle(category?: string, difficulty?: string) {
   const data = await res.json();
   return data;
 }
+
