@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { fetchPuzzle } from '@/lib/fetchPuzzle';
+import { fetchPuzzle } from './lib/fetchPuzzle';
 import {
   View,
   Text,
@@ -9,7 +9,6 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { fetchPuzzle } from 'app/lib/fetchPuzzle';
 
 export default function PuzzleScreen() {
   const [puzzle, setPuzzle] = useState<any | null>(null);
@@ -26,7 +25,7 @@ export default function PuzzleScreen() {
   useEffect(() => {
     if (status === 'lost' && streak > 0) {
       AsyncStorage.setItem('pendingStreak', String(streak));
-      setStreak(0); // reset streak after storing
+      setStreak(0);
     }
   }, [status]);
 
@@ -35,7 +34,7 @@ export default function PuzzleScreen() {
     setGuessesLeft(3);
     setHintUsed(false);
     setGuess('');
-    const newPuzzle = await getPuzzle();
+    const newPuzzle = await fetchPuzzle();
     setPuzzle(newPuzzle);
   };
 
@@ -45,9 +44,7 @@ export default function PuzzleScreen() {
   const checkAnswer = () => {
     if (!puzzle) return;
     const cleanedGuess = normalize(guess);
-    const accepted = [puzzle.Answer, ...(puzzle.AcceptableAnswers || [])].map(
-      normalize
-    );
+    const accepted = [puzzle.Answer, ...(puzzle.AcceptableAnswers || [])].map(normalize);
 
     if (accepted.includes(cleanedGuess)) {
       setStatus('won');
@@ -69,20 +66,16 @@ export default function PuzzleScreen() {
     }
   };
 
-  const renderDots = () => {
-    return (
-      <View className="flex-row space-x-2 justify-center my-2">
-        {[...Array(3)].map((_, i) => (
-          <View
-            key={i}
-            className={`w-3 h-3 rounded-full ${
-              i < guessesLeft ? 'bg-green-500' : 'bg-gray-300'
-            }`}
-          />
-        ))}
-      </View>
-    );
-  };
+  const renderDots = () => (
+    <View className="flex-row space-x-2 justify-center my-2">
+      {[...Array(3)].map((_, i) => (
+        <View
+          key={i}
+          className={`w-3 h-3 rounded-full ${i < guessesLeft ? 'bg-green-500' : 'bg-gray-300'}`}
+        />
+      ))}
+    </View>
+  );
 
   if (!puzzle) {
     return (
@@ -196,3 +189,4 @@ export default function PuzzleScreen() {
     </View>
   );
 }
+
