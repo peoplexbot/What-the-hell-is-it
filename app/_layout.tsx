@@ -1,26 +1,17 @@
-import { Text, View } from 'react-native';
-import { useEffect, useState } from 'react';
-import { getPuzzle } from '../lib/getPuzzle'; // Adjust this if needed
+import React from 'react';
+import { View, Text } from 'react-native';
 
-export default function Layout() {
-  const [puzzle, setPuzzle] = useState<any>(null);
-  const [error, setError] = useState('');
-
-  useEffect(() => {
-    getPuzzle()
-      .then(setPuzzle)
-      .catch((err) => setError(err.message));
-  }, []);
-
+export default function Home() {
   return (
-    <View style={{ padding: 50 }}>
-      {error ? (
-        <Text style={{ color: 'red' }}>{error}</Text>
-      ) : puzzle ? (
-        <Text>{JSON.stringify(puzzle, null, 2)}</Text>
-      ) : (
-        <Text>Loading...</Text>
-      )}
+    <View
+      style={{
+        flex: 1,
+        backgroundColor: '#fff',
+        justifyContent: 'center',
+        alignItems: 'center',
+      }}
+    >
+      <Text style={{ fontSize: 24 }}>👋 Hello World from Expo!</Text>
     </View>
   );
 }
