@@ -1,6 +1,6 @@
 // app/lib/fetchPuzzle.ts
 export async function fetchPuzzle(category?: string, difficulty?: string) {
-  const response = await fetch('https://YOUR-SUPABASE-FUNCTION-URL', {
+  const response = await fetch('https://omewpciftgobcpgnyoec.supabase.co/functions/v1/generate-puzzle', {
     method: 'POST',
     body: JSON.stringify({ category, difficulty }),
   });
