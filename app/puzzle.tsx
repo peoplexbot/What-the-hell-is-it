@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { fetchPuzzle } from './lib/fetchPuzzle';
+import { fetchPuzzle } from '@/lib/fetchPuzzle';
 import {
   View,
   Text,
