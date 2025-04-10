@@ -1,5 +1,5 @@
 export async function fetchPuzzle(category?: string) {
-  const baseUrl = 'https://wthyidihhxfqkndslvhd.supabase.co/functions/v1/generate-puzzle';
+  const baseUrl = 'https://omewpciftgobcpgnyoec.supabase.co/functions/v1/generate-puzzle';
 
   const url = category
     ? `${baseUrl}?category=${encodeURIComponent(category)}`
